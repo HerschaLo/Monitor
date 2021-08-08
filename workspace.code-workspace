@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"name": "XHacks Folder",
+			"uri": "vsls:/"
+		}
+	],
+	"settings": {
+		"extensions.ignoreRecommendations": true,
+		"typescript.tsc.autoDetect": "off",
+		"debug.allowBreakpointsEverywhere": true,
+		"html.autoClosingTags": false
+	}
+}

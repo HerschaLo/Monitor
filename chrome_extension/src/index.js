@@ -7,7 +7,7 @@ class Renderer extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            mode:'top sites'
+            mode:'pomodoro'
         }
     }
     render() {
@@ -18,14 +18,18 @@ class Renderer extends React.Component {
         else if (this.state.mode == 'all sites') {
             app = (<AllTimes />)
         }
+        else if (this.state.mode == 'pomodoro') {
+            app = (<PomodoroTimer />)
+        }
         const buttonStyle = { backgroundColor: "white", border: "6px solid #00e6e6" }
         return (
-            <div style={{ width: "500px", height: "500px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", backgroundColor:"#008080" }}>
-                <div style={{ border: "12px solid #00e6e6", display: "flex", justifyContent: "center", alignItems:"center", borderRadius: "20px", width:"450px", height:"450px"}}>
+            <div style={{ width: "500px", height: "500px", display: "flex", alignItems: "center", justifyContent:"center", flexDirection: "column", backgroundColor:"#008080" }}>
+                <div style={{ border: "12px solid #00e6e6", display: "flex", justifyContent: "space-around", alignItems:"center", flexDirection:"column", borderRadius: "20px", width:"450px", height:"450px", padding:"20px"}}>
                 {app}
-                <div style={{display:"flex", flexDirection:"row", justifyContent:"center"}}>
-                        <button onClick={(e) => { this.setState({ mode: 'top sites' }) }} style={{marginRight:"30px"}}>Display data for top 5 sites</button>
-                    <button onClick={(e) => { this.setState({ mode: 'all sites' }) }}>Display data for all sites</button>
+                <div style={{display:"flex", justifyContent:"space-around", flexDirection:"row"}}>
+                        <button onClick={(e) => { this.setState({ mode: 'top sites' }) }}>Display browsing time for top 5 sites</button>
+                        <button onClick={(e) => { this.setState({ mode: 'all sites' }) }}>Display browsing time for all sites</button>
+                        <button onClick={(e) => { this.setState({ mode: 'pomodoro' }) }}>Show pomodoro timer</button>
                     </div>
                 </div>
             </div>
@@ -37,13 +41,15 @@ class PomodoroTimer extends React.Component {
         super(props)
         let storageCache = {}
         this.state = {
-            workTimeSetting: 0,
-            breakTimeSetting: 0,
+            workTimeSetting: 1,
+            breakTimeSetting: 1,
             breakTime: 0,
             workTime: 0,
             paused: null,
             working:null,
         }
+        this.changeBreakTime = this.changeBreakTime.bind(this)
+        this.changeWorkTime = this.changeWorkTime.bind(this)
         const getData = new Promise((resolve, reject) => {
             chrome.storage.local.get(null, (items) => {
                 Object.assign(storageCache, items)
@@ -56,18 +62,111 @@ class PomodoroTimer extends React.Component {
                     workTimeSetting: storageCache.workTimeSetting,
                     breakTimeSetting: storageCache.breakTimeSetting,
                     breakTime: storageCache.breakTime,
-                    workTime: storageCache.workTimeSetting,
+                    workTime: storageCache.workTime,
                     paused: storageCache.paused,
                     working:storageCache.working
                 })
             })
 
     }
-    render() {
-        let time=[]
-        if (this.state.working) {
-            time.push(<p></p>)
+    changeBreakTime(event) {
+        if (event.target.value == '') {
+            event.target.value = 0
         }
+        this.setState({ breakTimeSetting: parseInt(event.target.value) })
+        let breakTimeSetting = parseInt(event.target.value)
+        chrome.storage.local.set({breakTimeSetting})
+    }
+    changeWorkTime(event) {
+        if (event.target.value == '') {
+            event.target.value=0
+        }
+        this.setState({ workTimeSetting: parseInt(event.target.value) })
+        let workTimeSetting = parseInt(event.target.value)
+        chrome.storage.local.set({ workTimeSetting })
+    }
+    render() {
+        chrome.alarms.onAlarm.addListener(() => {
+            let storageCache = {}
+            const getData = new Promise((resolve, reject) => {
+                chrome.storage.local.get(null, (items) => {
+                    Object.assign(storageCache, items)
+
+                    return resolve()
+                })
+            })
+                .then(() => {
+                    this.setState({
+                        workTimeSetting: storageCache.workTimeSetting,
+                        breakTimeSetting: storageCache.breakTimeSetting,
+                        breakTime: storageCache.breakTime,
+                        workTime: storageCache.workTime,
+                        paused: storageCache.paused,
+                        working: storageCache.working
+                    })
+                })
+        })
+        let time = 0
+        let msg=''
+        if (this.state.working) {
+            time = this.state.workTime
+            msg='Your next break is in:'
+        }
+        else {
+            time = this.state.breakTime
+            msg='Your remaining break time:'
+        }
+        return (
+            <div style={{display:"flex", flexDirection:"column", justifyContent:"space-around", alignItems:"center"}}>
+                <h2>
+                    {msg}
+                </h2>
+                <p style={{ fontSize: "50px", fontWeight: "bold" }}>{time}m</p>
+                <button onClick={() => {
+                    this.setState({ breakTime: this.state.breakTimeSetting, workTime:this.state.workTimeSetting})
+                    let breakTime = this.state.breakTimeSetting
+                    let workTime = this.state.workTimeSetting
+                    chrome.storage.local.set({ breakTime })
+                    chrome.storage.local.set({ workTime })
+                }}>
+                    Reset
+                </button>
+                <h2>
+                    Settings:
+                </h2>
+                <div style={{ display: "inline" }}>
+                    <button onClick={(e)=>{
+                        this.setState({ breakTimeSetting: this.state.breakTimeSetting + 1 })
+                        let breakTimeSetting = this.state.breakTimeSetting+1
+                        chrome.storage.local.set({breakTimeSetting})
+                    }}>+</button>
+                     <input type="text" value={this.state.breakTimeSetting}
+                        onChange={this.changeBreakTime} />
+                    <span>m</span>
+                    <button onClick={(e) => {
+                        this.setState({ breakTimeSetting: this.state.breakTimeSetting - 1 })
+                        let breakTimeSetting = this.state.breakTimeSetting-1
+                        chrome.storage.local.set({ breakTimeSetting })
+                    }}>-</button>
+                </div>
+                <br />
+                <div style={{ display: "inline" }}>
+                    <button onClick={(e) => {
+                        this.setState({ workTimeSetting: this.state.workTimeSetting + 1 })
+                        let workTimeSetting = this.state.workTimeSetting+1
+                        chrome.storage.local.set({ workTimeSetting })
+                    }}>+</button>
+                    <input type="text" value={this.state.workTimeSetting}
+                        onChange={this.changeWorkTime} />
+                    <span>m</span>
+                    <button onClick={(e) => {
+                        this.setState({ workTimeSetting: this.state.workTimeSetting - 1 })
+                        let workTimeSetting = this.state.workTimeSetting-1
+                        chrome.storage.local.set({ workTimeSetting })
+                    }}>-</button>
+                </div>
+            </div>
+            )
     }
 }
 class AllTimes extends React.Component {

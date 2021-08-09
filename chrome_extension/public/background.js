@@ -21,6 +21,12 @@ chrome.alarms.onAlarm.addListener(() => {
                     storageCache.working = false
                     storageCache.workTime = storageCache.workTimeSetting
                     console.log('Starting Break Time')
+	            chrome.tabs.create({ url: "break.html" })
+		    .then((tab)=>{
+                        setTimeout(()=>{
+			chrome.tabs.remove(tab.id)}
+			,7000)
+			})
                 }
             } else {
                 // break time
@@ -31,6 +37,12 @@ chrome.alarms.onAlarm.addListener(() => {
                     storageCache.working = true
                     storageCache.breakTime = storageCache.breakTimeSetting
                     console.log('Starting Work Time')
+		    chrome.tabs.create({url:"work.html"})
+		    .then((tab)=>{
+                        setTimeout(()=>{
+			chrome.tabs.remove(tab.id)}
+			,7000)
+			})
                 }
             }
             chrome.storage.local.set(storageCache)

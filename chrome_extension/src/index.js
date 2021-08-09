@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
 /*global chrome*/
 class Renderer extends React.Component {
     constructor(props) {
@@ -140,6 +139,7 @@ class PomodoroTimer extends React.Component {
                         let breakTimeSetting = this.state.breakTimeSetting+1
                         chrome.storage.local.set({breakTimeSetting})
                     }}>+</button>
+		     <span>Break time:</span>
                      <input type="text" value={this.state.breakTimeSetting}
                         onChange={this.changeBreakTime} />
                     <span>m</span>
@@ -156,6 +156,7 @@ class PomodoroTimer extends React.Component {
                         let workTimeSetting = this.state.workTimeSetting+1
                         chrome.storage.local.set({ workTimeSetting })
                     }}>+</button>
+		    <span>Work time:</span>
                     <input type="text" value={this.state.workTimeSetting}
                         onChange={this.changeWorkTime} />
                     <span>m</span>
@@ -217,7 +218,7 @@ class AllTimes extends React.Component {
                 })
                 sites.sort((a, b) => a[0] - b[0]).reverse()
                 sites.forEach((site) => {
-                    if (site != 'null') {
+                    if (site[1] != 'null') {
                         sitesSorted.push(
                             <p>{site[1]}: <span style={{ fontWeight: "bold" }}>{Math.floor(site[0] / 3600)}h {Math.floor((site[0] - Math.floor(site[0] / 3600) * 3600) / 60)}m {Math.floor(site[0] - Math.floor(site[0] / 60) * 60)}s</span></p>)
                     }
@@ -282,7 +283,7 @@ class Times extends React.Component {
                 sites.sort((a, b) => a[0] - b[0]).reverse()
                 let counter=0
                 sites.forEach((site) => {
-                    if (counter < 5 && site!='null') {
+                    if (counter < 5 && site[1]!='null') {
                         sitesSorted.push(
                             <p>{site[1]}: <span style={{ fontWeight: "bold" }}>{Math.floor(site[0] / 3600)}h {Math.floor((site[0] - Math.floor(site[0] / 3600) * 3600) / 60)}m {Math.floor(site[0] - Math.floor(site[0] / 60) * 60)}s</span></p>)
                     }

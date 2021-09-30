@@ -20,19 +20,100 @@ class Renderer extends React.Component {
         else if (this.state.mode == 'pomodoro') {
             app = (<PomodoroTimer />)
         }
+        else if (this.state.mode == 'proc') {
+            app = (<ProcrastinationStats />)
+        }
         const buttonStyle = { backgroundColor: "white", border: "6px solid #00e6e6" }
         return (
-            <div style={{ width: "500px", height: "500px", display: "flex", alignItems: "center", justifyContent:"center", flexDirection: "column", backgroundColor:"#008080" }}>
+            <div style={{ width: "500px", height: "500px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", backgroundColor: "#008080", padding: "20px" }}>
                 <div style={{ border: "12px solid #00e6e6", display: "flex", justifyContent: "space-around", alignItems:"center", flexDirection:"column", borderRadius: "20px", width:"450px", height:"450px", padding:"20px"}}>
                 {app}
                 <div style={{display:"flex", justifyContent:"space-around", flexDirection:"row"}}>
                         <button onClick={(e) => { this.setState({ mode: 'top sites' }) }}>Display browsing time for top 5 sites</button>
                         <button onClick={(e) => { this.setState({ mode: 'all sites' }) }}>Display browsing time for all sites</button>
                         <button onClick={(e) => { this.setState({ mode: 'pomodoro' }) }}>Show pomodoro timer</button>
+                        <button onClick={(e) => { this.setState({ mode: 'proc' }) }}>Procrastination Stats</button>
                     </div>
                 </div>
             </div>
         )
+    }
+}
+class ProcrastinationStats extends React.Component{
+    constructor(props) {
+        super(props)
+        this.state = {
+            procSites: [],
+            sites: [],
+            procSessions:0,
+        }
+        let storageCache = {}
+        const getData = new Promise((resolve, reject) => {
+            chrome.storage.local.get(null, (items) => {
+                Object.assign(storageCache, items)
+
+                return resolve()
+            })
+        })
+            .then(() => {
+                let curSite = storageCache.prevSites[1]
+
+                if (typeof storageCache.siteTimes[curSite] === 'undefined') {
+                    storageCache.siteTimes[curSite] = 0
+                }
+
+                storageCache.curTime = Date.now()
+
+                storageCache.siteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
+
+                storageCache.blackList.forEach((site) => {
+                    if (curSite == site) {
+                        storageCache.procTime += (storageCache.curTime - storageCache.prevTime) / 1000
+
+                        if (typeof storageCache.procSiteTimes[curSite] === 'undefined') {
+                            storageCache.procSiteTimes[curSite] = 0
+                        }
+                        storageCache.procSiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
+                    }
+                })
+
+                storageCache.prevTime = Date.now()
+                chrome.storage.local.set(storageCache)
+                this.setState({
+                    procSites: storageCache.procSiteTimes,
+                    sites: storageCache.siteTimes,
+                    procSessions:storageCache.procSessions
+                })
+            })
+    }
+    render() {
+        let totalTime = 0
+        let procTime = 0
+        Object.values(this.state.sites).forEach((time) => {
+            totalTime+=time
+        })
+        Object.values(this.state.procSites).forEach((time) => {
+            procTime+=time
+        })
+        let procPercent = (procTime / totalTime * 100).toFixed(1)
+        let procAverage
+        if (isNaN(procTime / 60 / this.state.procSessions)) {
+            procAverage = 0
+        }
+        else {
+            procAverage = (procTime / 60 / this.state.procSessions).toFixed(1)
+        }
+        return (
+            <div style={{ height: "300px", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
+                <div><h1>Procrastination Stats</h1>
+                    <h2>Time spent Procrastinating</h2></div>
+                <p style={{ fontSize: "35px", fontWeight: "bold" }}>{Math.floor(procTime/3600) }h {(procTime/60).toFixed(1)}m</p>
+                <h2>Percentage of time spent procrastinating:</h2>
+                <p style={{ fontSize: "35px", fontWeight: "bold" }}>{procPercent}%</p>
+                <h2>Average time per procrastination session:</h2>
+                <p style={{ fontSize: "35px", fontWeight: "bold" }}>{procAverage}m</p>
+            </div>
+            )
     }
 }
 class PomodoroTimer extends React.Component {
@@ -175,8 +256,7 @@ class AllTimes extends React.Component {
         super(props)
         let storageCache = {}
         var sites = []
-        var sitesSorted = [<div><h1>Website Time Tracker</h1>
-            <h2>Data for all websites</h2></div>]
+        var sitesSorted = []
         this.state = {
             websites: sitesSorted
         }
@@ -229,7 +309,11 @@ class AllTimes extends React.Component {
     render() {
         return (
             <div>
-                {this.state.websites}
+                <div><h1>Website Time Tracker</h1>
+                    <h2>Data for all websites</h2></div>
+                <div style={{height:"250px", overflowY:"scroll"}}>
+                    {this.state.websites}
+                </div>
             </div>
         )
     }
@@ -306,7 +390,3 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById('root')
 );
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA

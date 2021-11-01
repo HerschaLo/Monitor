@@ -6,7 +6,8 @@
   "background": {
     "service_worker": "debugger.js"
   },
-  "permissions": ["storage", "scripting", "alarms", "tabs", "activeTab", "background", "history"],
+  "permissions": [ "storage", "alarms", "tabs", "activeTab", "background", "scripting", "notifications" ],
+  "host_permissions": [ "<all_urls>" ],
   "action": {
     "default_popup": "index.html",
     "default_icon": {

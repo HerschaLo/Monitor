@@ -35,13 +35,13 @@ const BrowsingData = () => {
             .then(() => {
                 let curSite = storageCache.prevSites[1]
 
-                if (typeof storageCache.siteTimes[curSite] === 'undefined') {
-                    storageCache.siteTimes[curSite] = 0
+                if (typeof storageCache.totalSiteTimes[curSite] === 'undefined') {
+                    storageCache.totalSiteTimes[curSite] = 0
                 }
 
                 storageCache.curTime = Date.now()
 
-                storageCache.siteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
+                storageCache.totalSiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
 
                 storageCache.blackList.forEach((site) => {
                     if (curSite == site) {
@@ -58,10 +58,10 @@ const BrowsingData = () => {
 
                 chrome.storage.local.set(storageCache)
 
-                Object.keys(storageCache.siteTimes).forEach((site) => {
+                Object.keys(storageCache.totalSiteTimes).forEach((site) => {
 
                     sites.push(
-                        [storageCache.siteTimes[site], site]
+                        [storageCache.totalSiteTimes[site], site]
                     )
 
                 })

@@ -8,7 +8,7 @@ import BlackList from "./blockers.js"
 /*global chrome*/
 
 const Frame = () => {
-    const [mode, setMode] = useState('pomodoro')
+    const [mode, setMode] = useState('pomodoro') //Controls which tool shows up e.g. pomodoro timer, website blocker
     const frameStyle = makeStyles({
         frame: {
             width: "560px",
@@ -50,7 +50,7 @@ const Frame = () => {
         }
     })
         const classes = frameStyle()
-        let app =[]
+        let app = [] 
         if (mode == 'browsingData') {
             app=(<BrowsingData />)
         }

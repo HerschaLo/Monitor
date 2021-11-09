@@ -107,16 +107,6 @@ class PomodoroTimer extends React.Component {
                 <Typography style={{ fontSize: "50px", fontWeight: "bold" }}>{time}m</Typography>
                 <div className={classes.setMode}>
                     <button onClick={() => {
-                        this.setState({ breakTime: this.state.breakTimeSetting, workTime: this.state.workTimeSetting })
-                        let breakTime = this.state.breakTimeSetting
-                        let workTime = this.state.workTimeSetting
-
-                        chrome.storage.local.set({ breakTime })
-                        chrome.storage.local.set({ workTime })
-                    }}>
-                        Reset
-                    </button>
-                    <button onClick={() => {
                         this.setState({ working: true, workTime: this.state.workTimeSetting, breakTime: this.state.breakTimeSetting })
                         let working = true
                         let workTime = this.state.workTimeSetting
@@ -171,6 +161,9 @@ class PomodoroTimer extends React.Component {
                         chrome.storage.local.set({ workTimeSetting })
                     }}><Remove /></button>
                 </div>
+                <Typography style={{fontSize:"10px"}}>
+                    Tip: Click on "Start Work" or "Start Break" in order to reset the timer after you change its settings.
+                </Typography>
             </div>
         )
     }

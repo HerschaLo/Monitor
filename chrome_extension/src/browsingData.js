@@ -69,6 +69,11 @@ const BrowsingData = () => {
 
                 sites.forEach((site) => {
                     if (site[1] != 'null') {
+                        let totalTime = site[0]
+                        let hourCount = Math.floor(totalTime / 3600)
+                        let minuteCount = Math.floor((totalTime - Math.floor(totalTime / 3600) * 3600) / 60)
+                        let secondCount = Math.floor(totalTime - Math.floor(totalTime / 60) * 60)
+
                         sitesSorted.push(
                             <div style={{ display: "flex", marginBottom: "15px" }}>
                                 <div style={{ width: "200px", display: "inline-flex", justifyContent: "flex-start", paddingLeft: "15px" }}>
@@ -79,7 +84,7 @@ const BrowsingData = () => {
                                 </div>
                                 <div style={{ display: "flex", justifyContent: "flex-start", width: "125px" }}>
                                     <Typography style={{ fontWeight: "bold" }}>
-                                        {Math.floor(site[0] / 3600)}h {Math.floor((site[0] - Math.floor(site[0] / 3600) * 3600) / 60)}m {Math.floor(site[0] - Math.floor(site[0] / 60) * 60)}s
+                                        {hourCount}h {minuteCount}m {secondCount}s
                                     </Typography>
                                 </div>
                             </div>

@@ -44,7 +44,7 @@ window.addEventListener('load', () => {
                     }
 
                     chrome.storage.local.set({ blackList }, () => {
-                        window.location = `https://${websiteURL}`
+                        window.location = `${websiteURL}`
                     })
                     
                 }

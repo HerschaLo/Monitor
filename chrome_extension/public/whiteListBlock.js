@@ -36,8 +36,6 @@ window.addEventListener('load', () => {
 
                     let whiteList = storageCache.whiteList
 
-                    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-
                     console.log(websiteName)
 
                     if (!whiteList.includes(websiteName)) {

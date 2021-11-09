@@ -64,7 +64,7 @@ const Frame = () => {
             app=(<BlackList />)
         }
         return (
-            <div className={classes.frame}>
+            <div className={classes.frame} id="frame">
                 <div style={{ border: "12px solid #00e6e6", display: "flex", justifyContent: "space-around", alignItems:"center", flexDirection:"column", borderRadius: "20px", width:"500px", height:"500px", padding:"15px"}}>
                     <div style={{height:"400px"}}>
                         {app}

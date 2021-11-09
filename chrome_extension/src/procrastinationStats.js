@@ -5,6 +5,8 @@ const ProcrastinationStats = () => {
     const [procSessions, setProcSessions] = useState(0)
     const [sites, setSites] = useState([])
     const [procSites, setProcSites] = useState([])
+    const [mode, setMode] = useState("daily")
+    const [storageData, setStorageData] = useState({})
     useEffect(() => {
         let storageCache = {}
         const getData = new Promise((resolve, reject) => {
@@ -25,22 +27,38 @@ const ProcrastinationStats = () => {
 
                 storageCache.siteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
 
+                storageCache.daySiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
                 storageCache.blackList.forEach((site) => {
                     if (curSite == site) {
-                        storageCache.procTime += (storageCache.curTime - storageCache.prevTime) / 1000
+                        storageCache.totalProcTime += (storageCache.curTime - storageCache.prevTime) / 1000
 
-                        if (typeof storageCache.procSiteTimes[curSite] === 'undefined') {
-                            storageCache.procSiteTimes[curSite] = 0
+                        if (typeof storageCache.totalProcSiteTimes[curSite] === 'undefined') {
+                            storageCache.totalProcSiteTimes[curSite] = 0
                         }
-                        storageCache.procSiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
+                        storageCache.totalProcSiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
+
+                        storageCache.dayProcTime += (storageCache.curTime - storageCache.prevTime) / 1000
+
+                        if (typeof storageCache.dayProcSiteTimes[curSite] === 'undefined') {
+                            storageCache.dayProcSiteTimes[curSite] = 0
+                        }
+                        storageCache.dayProcSiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
                     }
                 })
 
                 storageCache.prevTime = Date.now()
                 chrome.storage.local.set(storageCache)
-                setProcSites(storageCache.procSiteTimes)
-                setSites(storageCache.siteTimes)
-                setProcSessions(storageCache.procSessions)
+                if (mode == "daily") {
+                    setProcSites(storageCache.dayProcSiteTimes)
+                    setSites(storageCache.daySiteTimes)
+                    setProcSessions(storageCache.dayProcSessions)
+                }
+                else {
+                    setProcSites(storageCache.totalProcSiteTimes)
+                    setSites(storageCache.siteTimes)
+                    setProcSessions(storageCache.totalProcSessions)
+                }
+                setStorageData(storageCache)
             })
     }, [])
     let totalTime = 0
@@ -71,6 +89,16 @@ const ProcrastinationStats = () => {
             <Typography>Average time per procrastination session:</Typography>
             <Typography style={{ fontSize: "35px", fontWeight: "bold" }}>{procAverage}m</Typography>
             <Typography>Websites which count towards procrastination are based off the list of blacklisted sites</Typography>
+            <button onClick={() => {
+                if (mode == "daily") {
+                    setSites(storageData.siteTimes)
+                    setProcSites(storageData.totalProcSiteTimes)
+                }
+                else {
+                    setSites(storageData.daySiteTimes)
+                    setProcSites(storageData.dayProcSiteTimes)
+                }
+                    }}></button>
         </div>
     )
 }

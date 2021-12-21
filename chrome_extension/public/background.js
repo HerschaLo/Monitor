@@ -1,6 +1,6 @@
 //Initialize variables for chrome extension
 chrome.runtime.onInstalled.addListener(() => {
-    let siteTimes = {} //Websites user has visited and amount of time user has spent on them starting from when they downloaded the extension. I didn't change it to totalSiteTimes because that 
+    let totalSiteTimes = {} //Websites user has visited and amount of time user has spent on them starting from when they downloaded the extension. I didn't change it to totalSiteTimes because that 
     let daySiteTimes = {} //Websites user has visited and amount of time user has spent on them during the current day
 
     let whiteList = []
@@ -33,8 +33,9 @@ chrome.runtime.onInstalled.addListener(() => {
 
     chrome.alarms.create("Pomodoro", { periodInMinutes: 0.1 }) //Initialize pomodoro timer
 
+    chrome.alarms.create("TimeTracker", { periodInMinutes: 0.13 }) //Initialize pomodoro timer
     //Initialize all the above variables
-    chrome.storage.local.set({ siteTimes })
+    chrome.storage.local.set({ totalSiteTimes })
     chrome.storage.local.set({daySiteTimes})
 
     chrome.storage.local.set({ whiteList })
@@ -66,82 +67,99 @@ chrome.runtime.onInstalled.addListener(() => {
 })
 
 //Pomodoro time keeper
-chrome.alarms.onAlarm.addListener(() => {
-    let storageCache = {} //Object to store data retrieved from chrome storage
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    console.log(alarm)
+    if (alarm.name == "Pomodoro") {
+        let storageCache = {} //Object to store data retrieved from chrome storage
 
-    const getData = new Promise((resolve, reject) => {
+        const getData = new Promise((resolve, reject) => {
 
-        chrome.storage.local.get(null, (items) => {
-            Object.assign(storageCache, items)
+            chrome.storage.local.get(null, (items) => {
+                Object.assign(storageCache, items)
 
-            return resolve()
+                return resolve()
+            })
         })
-    })
-        .then(() => {
-            if (storageCache.paused) {
-                console.log('Paused')
-            }
-            else if (storageCache.working) {
-                storageCache.workTime -= 1 //Reduce counter for amount of time left for working
-                console.log(storageCache.workTime)
+            .then(() => {
+                if (storageCache.paused) {
+                    console.log('Paused')
+                }
+                else if (storageCache.working) {
+                    storageCache.workTime -= 1 //Reduce counter for amount of time left for working
+                    console.log(storageCache.workTime)
 
-                if (storageCache.workTime == 0) {//Switch timer to display counter for time left for break and reset counter for work time
+                    if (storageCache.workTime == 0) {//Switch timer to display counter for time left for break and reset counter for work time
 
-                    storageCache.working = false
-                    storageCache.workTime = storageCache.workTimeSetting
-                    console.log('Starting Break Time')
+                        storageCache.working = false
+                        storageCache.workTime = storageCache.workTimeSetting
+                        console.log('Starting Break Time')
 
-                    chrome.notifications.create('break', { //Create notification when break starts
-                        type: 'basic',
-                        iconUrl: 'images/logo.png',
-                        title: 'Time to Start Your Break!',
-                        message: `Your next work session is in ${storageCache.breakTimeSetting} minutes`,
-                        priority: 2
-                    })
-                    try {
-                        setTimeout(() => {
-                            chrome.notifications.clear("break")
-                        }, 5000)
+                        chrome.notifications.create('break', { //Create notification when break starts
+                            type: 'basic',
+                            iconUrl: 'images/logo.png',
+                            title: 'Time to Start Your Break!',
+                            message: `Your next work session is in ${storageCache.breakTimeSetting} minutes`,
+                            priority: 2
+                        })
+                        try {
+                            setTimeout(() => {
+                                chrome.notifications.clear("break")
+                            }, 5000)
+                        }
+                        finally {
+
+                        }
                     }
-                    finally {
+                } else {
+                    storageCache.breakTime -= 1 //Reduce counter for amount of time left for working
+                    console.log(storageCache.breakTime)
 
+                    if (storageCache.breakTime == 0) {//Switch timer to display counter for time left for work and reset counter for break time 
+                        storageCache.working = true
+                        storageCache.breakTime = storageCache.breakTimeSetting
+                        console.log('Starting Work Time')
+
+                        chrome.notifications.create('work', {//Create notification when work starts
+                            type: 'basic',
+                            iconUrl: 'images/logo.png',
+                            title: 'Time to Start Working!',
+                            message: `Your next break is in ${storageCache.workTimeSetting} minutes`,
+                            priority: 2
+                        })
+                        try {
+                            setTimeout(() => {
+                                chrome.notifications.clear("work")
+                            }, 5000)
+                        }
+                        finally {
+
+                        }
                     }
                 }
-            } else {
-                storageCache.breakTime -= 1 //Reduce counter for amount of time left for working
-                console.log(storageCache.breakTime)
-
-                if (storageCache.breakTime == 0) {//Switch timer to display counter for time left for work and reset counter for break time 
-                    storageCache.working = true
-                    storageCache.breakTime = storageCache.breakTimeSetting
-                    console.log('Starting Work Time')
-
-                    chrome.notifications.create('work', {//Create notification when work starts
-                        type: 'basic',
-                        iconUrl: 'images/logo.png',
-                        title: 'Time to Start Working!',
-                        message: `Your next break is in ${storageCache.workTimeSetting} minutes`,
-                        priority: 2
-                    })
-                    try {
-                        setTimeout(() => {
-                            chrome.notifications.clear("work")
-                        }, 5000)
-                    }
-                    finally {
-
-                    }
-                }
-            }
-        chrome.storage.local.set(storageCache)
-        })
+                chrome.storage.local.set(storageCache)
+            })
+    }
+    else {
+        trackBrowsingTime()
+    }
 })
 
-`Records the amount of time you've spent on a website after you leave it.
-Chrome Manifest V3 doesn't allow you to just run a timer in the background that ticks up every second while you're on a site.
-Manifest V3 disables background scripts after a few seconds. Instead, I get a timestamp for when the user vists
-and exits a website, and subtract the difference to get the time.`
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+    for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
+        if (key == "totalSiteTimes" && oldValue != newValue) {
+            console.log("changed")
+            console.log(oldValue)
+            console.log(newValue)
+        }
+    }
+});
+
+//Records the amount of time you've spent on a website after you leave it.
+//Chrome Manifest V3 doesn't allow you to just run a timer in the background that ticks up every second while you're on a site.
+//Manifest V3 disables background scripts after a few seconds. Instead, I get a timestamp for when the user vists
+//and exits a website, and subtract the difference to get the time
 function trackBrowsingTime() { 
+    console.log("hello")
 
     let storageCache = {} //Object to store data retrieved from chrome storage
 
@@ -155,7 +173,7 @@ function trackBrowsingTime() {
     })
     .then(async () => {
         console.log(storageCache.prevSites)
-
+        console.log(storageCache.currentDate)
         let [tab] = await chrome.tabs.query({ active: true, currentWindow: true }) //Get current active tab of the user
 
         let url
@@ -245,6 +263,23 @@ function trackBrowsingTime() {
 
         console.log(storageCache.totalProcSiteTimes)
 
+        let currentDate = new Date().getMonth() + "/" + new Date().getDate()
+        let currentHours = new Date().getHours()
+
+        console.log(currentHours)
+        console.log(currentDate)
+        console.log(Boolean(currentDate != storageCache.currentDate))
+
+        if (currentDate != storageCache.currentDate && currentHours >= 6) {
+            console.log("date set")
+
+            storageCache.dayProcTime = 0
+            storageCache.dayProcSessions = 0
+            storageCache.dayProcSiteTimes = {}
+            storageCache.daySiteTimes = {}
+            storageCache.currentDate=currentDate
+        }
+
         chrome.storage.local.set(storageCache)
 
     })
@@ -260,7 +295,8 @@ chrome.windows.onCreated.addListener(function () {
     chrome.windows.getAll(function (windows) {
         console.log(windows.length)
         if (windows.length == 1) {
-
+            let prevSites = ['null', 'null']
+            let blockedTabIDsWithURLs = {}
             chrome.alarms.create("Pomodoro", { periodInMinutes: 0.1 })
             console.log("browser started")
 
@@ -269,34 +305,17 @@ chrome.windows.onCreated.addListener(function () {
 
             chrome.storage.local.set({ curTime })
             chrome.storage.local.set({ prevTime })
-
-            let storageCache = {}
-
-            const getData = new Promise((resolve, reject) => {
-
-                chrome.storage.local.get(null, (items) => {
-                    Object.assign(storageCache, items)
-
-                    return resolve()
-                })
-            })
-            .then(() => {
-                let currentDate = new Date().getMonth() + "/" + new Date().getDate()
-                if (storageCache.currentDate != currentDate && new Date().getHours() >= 6) {
-                    let dayProcTime = 0
-                    let dayProcSessions = 0
-                    let dayProcSiteTimes = {}
-                    let daySiteTimes = {}
-                    chrome.storage.local.set({ dayProcTime })
-                    chrome.storage.local.set({daySiteTimes})
-                    chrome.storage.local.set({ dayProcSiteTimes })
-                    chrome.storage.local.set({ dayProcSessions })
-                    chrome.storage.local.set({ currentDate })
-                }
-            })
+            chrome.storage.local.set({ prevSites })
+            chrome.storage.local.set({ blockedTabIDsWithURLs })
         }
     });
 });
+chrome.runtime.onStartup.addListener(() => {
+    let prevSites = ['null', 'null']
+    let blockedTabIDsWithURLs = {}
+    chrome.storage.local.set({ prevSites })
+    chrome.storage.local.set({ blockedTabIDsWithURLs })
+})
 //Record browsing time for previous website when user changes current tab URL
 chrome.tabs.onUpdated.addListener(async () => {
    trackBrowsingTime()
@@ -304,6 +323,7 @@ chrome.tabs.onUpdated.addListener(async () => {
 //Record browsing time for previous website when user changes windows
 chrome.windows.onFocusChanged.addListener(async () => {
     trackBrowsingTime()
+    console.log("focus changed")
 })//Record browsing time for last visited website when user exits chrome 
 chrome.windows.onRemoved.addListener(async () => {
     let windowCount;
@@ -318,7 +338,7 @@ chrome.windows.onRemoved.addListener(async () => {
         let prevSites = ['null', 'null']
         let blockedTabIDsWithURLs = {}
         chrome.storage.local.set({ prevSites })
-        chrome.storage.local.set({blockedTabIDsWithURLs})
+        chrome.storage.local.set({ blockedTabIDsWithURLs })
     }
 })
 

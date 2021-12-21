@@ -19,13 +19,13 @@ const ProcrastinationStats = () => {
             .then(() => {
                 let curSite = storageCache.prevSites[1]
 
-                if (typeof storageCache.siteTimes[curSite] === 'undefined') {
-                    storageCache.siteTimes[curSite] = 0
+                if (typeof storageCache.totalSiteTimes[curSite] === 'undefined') {
+                    storageCache.totalSiteTimes[curSite] = 0
                 }
 
                 storageCache.curTime = Date.now()
 
-                storageCache.siteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
+                storageCache.totalSiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
 
                 storageCache.daySiteTimes[curSite] += (storageCache.curTime - storageCache.prevTime) / 1000
                 storageCache.blackList.forEach((site) => {
@@ -55,7 +55,7 @@ const ProcrastinationStats = () => {
                 }
                 else {
                     setProcSites(storageCache.totalProcSiteTimes)
-                    setSites(storageCache.siteTimes)
+                    setSites(storageCache.totalSiteTimes)
                     setProcSessions(storageCache.totalProcSessions)
                 }
                 setStorageData(storageCache)
@@ -63,13 +63,20 @@ const ProcrastinationStats = () => {
     }, [])
     let totalTime = 0
     let procTime = 0
-    Object.values(sites).forEach((time) => {
-        totalTime += time
+    Object.keys(sites).forEach((siteName) => {
+        if (siteName != "null") {
+            totalTime += sites[siteName]
+        }
     })
-    Object.values(procSites).forEach((time) => {
-        procTime += time
+    Object.keys(procSites).forEach((siteName) => {
+        if (siteName != "null") {
+            procTime += procSites[siteName]
+        }
     })
     let procPercent = (procTime / totalTime * 100).toFixed(1)
+    if (isNaN(procPercent)) {
+        procPercent=0
+    }
     let procAverage
     if (procSessions == 0) {
         procAverage = 0
@@ -91,14 +98,24 @@ const ProcrastinationStats = () => {
             <Typography>Websites which count towards procrastination are based off the list of blacklisted sites</Typography>
             <button onClick={() => {
                 if (mode == "daily") {
-                    setSites(storageData.siteTimes)
+                    setSites(storageData.totalSiteTimes)
                     setProcSites(storageData.totalProcSiteTimes)
+                    setProcSessions(storageData.totalProcSessions)
+                    setMode("total")
                 }
                 else {
                     setSites(storageData.daySiteTimes)
                     setProcSites(storageData.dayProcSiteTimes)
+                    setProcSessions(storageData.dayProcSessions)
+                    setMode("daily")
                 }
-                    }}></button>
+            }}>
+                {mode == "daily" ?
+                    <span>Display procrastination data for all time</span>
+                    :
+                    <span>Display procrastination data for today</span>
+                }
+            </button>
         </div>
     )
 }
